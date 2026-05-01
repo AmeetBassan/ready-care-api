@@ -1,0 +1,36 @@
+spring:
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/readycare}
+    username: ${DB_USERNAME:readycare}
+    password: ${DB_PASSWORD:readycare}
+  jpa:
+    hibernate:
+      ddl-auto: none
+    open-in-view: false
+  flyway:
+    enabled: true
+
+server:
+  port: 8080
+
+app:
+  jwt:
+    secret: ${JWT_SECRET:this-is-my-secret-for-readycare-123123123}
+    expiration: 86400000
+  cancellation:
+    full-refund-hours-threshold: 48
+  email:
+    connection-string: ${AZURE_COMMUNICATION_SERVICES_CONNECTION_STRING:}
+    sender-address: ${APP_EMAIL_SENDER_ADDRESS:}
+  storage:
+    connection-string: ${AZURE_STORAGE_CONNECTION_STRING}
+    documents-container-name: documents
+    profile-pictures-container-name: profilepics
+  booking-reminder:
+    fixed-delay-ms: 60000
+  booking:
+    allow-early-complete: true
+
+logging:
+  level:
+    com.readycare.api: INFO

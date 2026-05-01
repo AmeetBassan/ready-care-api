@@ -1,0 +1,15 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: readycare-postgres
+    environment:
+      POSTGRES_DB: readycare
+      POSTGRES_USER: readycare
+      POSTGRES_PASSWORD: readycare
+    ports:
+      - "5432:5432"
+    volumes:
+      - readycare_pg_data:/var/lib/postgresql/data
+
+volumes:
+  readycare_pg_data:

@@ -1,0 +1,213 @@
+@startuml
+package "Enums" {
+  enum user_type {
+    CLIENT
+    PROFESSIONAL
+    ADMIN
+  }
+
+  enum gender_type {
+    MALE
+    FEMALE
+  }
+
+  enum verification_status {
+    NOT_SUBMITTED
+    PENDING_REVIEW
+    APPROVED
+    REJECTED
+    EXPIRED
+  }
+
+  enum availability_slot_status {
+    FREE
+    BOOKED
+    BLOCKED
+  }
+
+  enum booking_status {
+    REQUESTED
+    CONFIRMED
+    REJECTED
+    COMPLETED
+    CANCELLED
+    NO_SHOW
+  }
+
+  enum payment_status {
+    UNPAID
+    PAID
+    REFUNDED
+    PARTIALLY_REFUNDED
+    FAILED
+  }
+
+}
+
+package "Users & Profiles" {
+  class users <<table>> {
+    +id: uuid {PK}
+    --
+    type: user_type {NOT NULL}
+    first_name: text {NOT NULL}
+    last_name: text {NOT NULL}
+    gender: gender_type {NOT NULL}
+    dob: date {NOT NULL}
+    email: text {NOT NULL, UNIQUE}
+    phone_number: text
+    password_hash: text {NOT NULL}
+    primary_address_id: uuid {FK}
+    created_at: timestamp
+  }
+
+  class addresses <<table>> {
+    +id: uuid {PK}
+    --
+    user_id: uuid {FK}
+    label: text
+    line1: text {NOT NULL}
+    line2: text
+    city: text {NOT NULL}
+    postcode: text {NOT NULL}
+    country: text
+  }
+
+  class client_profiles <<table>> {
+    +user_id: uuid {PK, FK}
+  }
+
+  class professional_profiles <<table>> {
+    +user_id: uuid {PK, FK}
+    --
+    overall_verification_status: verification_status
+    bio: text
+    years_experience: integer
+    hourly_rate_office_hours: decimal
+    hourly_rate_out_of_office_hours: decimal
+  }
+
+  class admin_profiles <<table>> {
+    +user_id: uuid {PK, FK}
+  }
+}
+
+package "Professional Verification" {
+  class document_types <<table>> {
+    +id: uuid {PK}
+    --
+    name: text {NOT NULL}
+    description: text
+    is_required: boolean
+    has_expiry: boolean
+  }
+
+  class professional_documents <<table>> {
+    +id: uuid {PK}
+    --
+    professional_id: uuid {FK}
+    document_type_id: uuid {FK}
+    file_storage_key: text {NOT NULL}
+    status: verification_status
+    expiry_date: date
+    reviewed_by: uuid {FK}
+    reviewed_at: timestamp
+    rejection_reason: text
+    created_at: timestamp
+  }
+}
+
+package "Bookings & Availability" {
+  class availability_slots <<table>> {
+    +id: uuid {PK}
+    --
+    professional_id: uuid {FK}
+    start_ts: timestamp
+    status: availability_slot_status
+    created_at: timestamp
+    updated_at: timestamp
+  }
+
+  class bookings <<table>> {
+    +id: uuid {PK}
+    --
+    client_id: uuid {FK}
+    professional_id: uuid {FK}
+    address_id: uuid {FK}
+    start_ts: timestamp
+    end_ts: timestamp
+    status: booking_status
+    price: decimal
+    currency: currency_code
+    client_notes: text
+    professional_notes: text
+    cancelled_by: user_type
+    cancelled_at: timestamp
+    created_at: timestamp
+  }
+
+  class booking_slots <<table>> {
+    +booking_id: uuid {PK, FK}
+    +availability_slot_id: uuid {PK, FK, UNIQUE}
+    --
+    created_at: timestamp
+  }
+}
+
+package "Payments, Reviews" {
+  class payments <<table>> {
+    +id: uuid {PK}
+    --
+    booking_id: uuid {FK, UNIQUE}
+    status: payment_status
+    amount: decimal
+    paid_at: timestamp
+    provider: text
+    provider_reference: text
+    refunded_amount: decimal
+    refunded_at: timestamp
+    refund_reason: text
+    created_at: timestamp
+    updated_at: timestamp
+  }
+
+  class reviews <<table>> {
+    +id: uuid {PK}
+    --
+    booking_id: uuid {FK}
+    reviewer_id: uuid {FK}
+    reviewee_id: uuid {FK}
+    rating: integer
+    comment: text
+    created_at: timestamp
+    updated_at: timestamp
+  }
+
+}
+
+users "1" <-- "0..*" addresses
+users "0..1" --> "1" addresses
+
+users "1" <-- "0..1" client_profiles
+users "1" <-- "0..1" professional_profiles
+users "1" <-- "0..1" admin_profiles
+
+professional_profiles "1" <-- "0..*" professional_documents
+document_types "1" <-- "0..*" professional_documents
+admin_profiles "1" <-- "0..*" professional_documents
+
+professional_profiles "1" <-- "0..*" availability_slots
+
+client_profiles "1" <-- "0..*" bookings
+professional_profiles "1" <-- "0..*" bookings
+addresses "1" <-- "0..*" bookings
+
+bookings "1" <-- "1..*" booking_slots
+availability_slots "1" <-- "0..1" booking_slots
+
+bookings "1" <-- "0..1" payments
+bookings "1" <-- "0..2" reviews
+
+users "1" <-- "0..*" reviews : reviewer
+users "1" <-- "0..*" reviews : reviewee
+
+@enduml
